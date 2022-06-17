@@ -1,0 +1,101 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "syntax_tree"
+
+RAILS_ROOT = ARGV.first
+APPLICATION_CONFIGURATION_PATH =
+  "/railties/lib/rails/application/configuration.rb"
+CONFIGURING_DOC_PATH = "/guides/source/configuring.md"
+
+def rails_file(path)
+  SyntaxTree.read("#{RAILS_ROOT}#{path}")
+end
+
+application_configuration = rails_file(APPLICATION_CONFIGURATION_PATH)
+
+SyntaxTree.parse(application_configuration) => SyntaxTree::Program[
+  statements: SyntaxTree::Statements[
+    body: [*, SyntaxTree::ModuleDeclaration => module_rails, *]
+  ]
+]
+
+module_rails => SyntaxTree::ModuleDeclaration[
+  bodystmt: SyntaxTree::BodyStmt[
+    statements: SyntaxTree::Statements[
+      body: [*, SyntaxTree::ClassDeclaration => class_application, *]
+    ]
+  ]
+]
+
+class_application => SyntaxTree::ClassDeclaration[
+  bodystmt: SyntaxTree::BodyStmt[
+    statements: SyntaxTree::Statements[
+      body: [*, SyntaxTree::ClassDeclaration => class_configuration, *]
+    ]
+  ]
+]
+
+class_configuration => SyntaxTree::ClassDeclaration[
+  bodystmt: SyntaxTree::BodyStmt[
+    statements: SyntaxTree::Statements[
+      body: [
+        SyntaxTree::Command[
+          message: SyntaxTree::Ident[value: "attr_accessor"]
+        ] => attr_accessors,
+        *
+      ]
+    ]
+  ]
+]
+
+config_values =
+  attr_accessors.arguments.parts.map { |part| part.value.value }.sort
+
+configuring_raw = rails_file(CONFIGURING_DOC_PATH)
+
+before, general_config, after =
+  configuring_raw
+    .split("\n")
+    .slice_when do |_, next_line|
+      ["### Rails General Configuration", "### Configuring Assets"].include?(
+        next_line
+      )
+    end
+    .to_a
+
+general_config_header, *config_sections =
+  general_config
+    .slice_when { |line, next_line| next_line.start_with?("####") }
+    .to_a
+
+# TODO: remove this after making credentials and public_file_server not
+# attr_accessor
+config_values.delete_if do |e|
+  config_sections.any? { |section| /\.#{e}\./.match?(section[0]) }
+end
+
+added_count = 0
+config_values.each do |value|
+  header = "#### `config.#{value}`"
+
+  if config_sections.any? { |section| section[0] == header }
+    $stdout.write(".")
+  else
+    puts "Adding #{value}"
+    added_count += 1
+
+    config_sections << [header, "", "FIXME", ""]
+  end
+end
+
+puts ""
+puts "Adding #{added_count} options"
+
+config_sections.sort_by! { |section| section[0].split("`")[1] }
+
+File.open("#{RAILS_ROOT}#{CONFIGURING_DOC_PATH}", "w") do |f|
+  content_array = before + general_config_header + config_sections + after
+  content = content_array.join("\n") + "\n"
+  f.write(content)
+end
