@@ -6,11 +6,13 @@ require "syntax_tree"
 
 OPTIONS = {}
 
-OptionParser.new do |opts|
-  opts.banner = "Usage: check-config-docs [options] RAILS_ROOT"
+OptionParser
+  .new do |opts|
+    opts.banner = "Usage: check-config-docs [options] RAILS_ROOT"
 
-  opts.on("-a", "Automatically add missing options")
-end.parse!(into: OPTIONS)
+    opts.on("-a", "Automatically add missing options")
+  end
+  .parse!(into: OPTIONS)
 
 RAILS_ROOT = ARGV.first
 APPLICATION_CONFIGURATION_PATH =
