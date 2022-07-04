@@ -1,0 +1,24 @@
+name: daily-jobs
+
+on:
+  schedule:
+  - cron: '0 0 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  daily-check-config-docs:
+    name: Check Config Docs (rails main)
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.1
+        bundler-cache: true
+    - uses: actions/checkout@v3
+      with:
+        repository: rails/rails
+        path: rails
+    - run: bin/check-config-docs ./rails
