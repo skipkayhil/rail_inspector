@@ -1,7 +1,16 @@
 #!/usr/bin/env ruby
 
 require "bundler/setup"
+require "optparse"
 require "syntax_tree"
+
+OPTIONS = {}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: check-config-docs [options] RAILS_ROOT"
+
+  opts.on("-a", "Automatically add missing options")
+end.parse!(into: OPTIONS)
 
 RAILS_ROOT = ARGV.first
 APPLICATION_CONFIGURATION_PATH =
@@ -82,15 +91,17 @@ config_values.each do |value|
   if config_sections.any? { |section| section[0] == header }
     $stdout.write(".")
   else
-    puts "Adding #{value}"
+    $stdout.write("M")
     added_count += 1
 
     config_sections << [header, "", "FIXME", ""]
   end
 end
 
-puts ""
-puts "Adding #{added_count} options"
+unless OPTIONS[:a]
+  puts "\n\nFound #{added_count} missing options"
+  exit added_count == 0
+end
 
 config_sections.sort_by! { |section| section[0].split("`")[1] }
 
@@ -99,3 +110,5 @@ File.open("#{RAILS_ROOT}#{CONFIGURING_DOC_PATH}", "w") do |f|
   content = content_array.join("\n") + "\n"
   f.write(content)
 end
+
+puts "\n\nAdded #{added_count} options"
