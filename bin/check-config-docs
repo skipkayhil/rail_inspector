@@ -14,16 +14,33 @@ OptionParser
   end
   .parse!(into: OPTIONS)
 
-RAILS_ROOT = ARGV.first
-APPLICATION_CONFIGURATION_PATH =
-  "/railties/lib/rails/application/configuration.rb"
-CONFIGURING_DOC_PATH = "/guides/source/configuring.md"
+class RailsFileEditor
+  def initialize(rails_path)
+    @rails_path = Pathname.new(rails_path)
+  end
 
-def rails_file(path)
-  SyntaxTree.read("#{RAILS_ROOT}#{path}")
+  def read(relative_path)
+    path = rails_path.join(relative_path)
+    SyntaxTree.read(path)
+  end
+
+  def write(relative_path, content)
+    path = rails_path.join(relative_path)
+    File.write(path, content)
+  end
+
+  private
+
+  attr_reader :rails_path
 end
 
-application_configuration = rails_file(APPLICATION_CONFIGURATION_PATH)
+EDITOR = RailsFileEditor.new(ARGV.first)
+
+APPLICATION_CONFIGURATION_PATH =
+  "railties/lib/rails/application/configuration.rb"
+CONFIGURING_DOC_PATH = "guides/source/configuring.md"
+
+application_configuration = EDITOR.read(APPLICATION_CONFIGURATION_PATH)
 
 SyntaxTree.parse(application_configuration) => SyntaxTree::Program[
   statements: SyntaxTree::Statements[
@@ -63,7 +80,7 @@ class_configuration => SyntaxTree::ClassDeclaration[
 config_values =
   attr_accessors.arguments.parts.map { |part| part.value.value }.sort
 
-configuring_raw = rails_file(CONFIGURING_DOC_PATH)
+configuring_raw = EDITOR.read(CONFIGURING_DOC_PATH)
 
 before, general_config, after =
   configuring_raw
@@ -107,10 +124,8 @@ end
 
 config_sections.sort_by! { |section| section[0].split("`")[1] }
 
-File.open("#{RAILS_ROOT}#{CONFIGURING_DOC_PATH}", "w") do |f|
-  content_array = before + general_config_header + config_sections + after
-  content = content_array.join("\n") + "\n"
-  f.write(content)
-end
+content_array = before + general_config_header + config_sections + after
+content = content_array.join("\n") + "\n"
+EDITOR.write(CONFIGURING_DOC_PATH, content)
 
 puts "\n\nAdded #{added_count} options"
