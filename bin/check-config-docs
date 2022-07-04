@@ -2,6 +2,7 @@
 
 require "bundler/setup"
 require "optparse"
+require "set"
 require "syntax_tree"
 
 OPTIONS = {}
@@ -17,6 +18,11 @@ OptionParser
 class RailsFileEditor
   def initialize(rails_path)
     @rails_path = Pathname.new(rails_path)
+  end
+
+  def parse(relative_path)
+    file = read(relative_path)
+    SyntaxTree.parse(file)
   end
 
   def read(relative_path)
@@ -40,45 +46,50 @@ APPLICATION_CONFIGURATION_PATH =
   "railties/lib/rails/application/configuration.rb"
 CONFIGURING_DOC_PATH = "guides/source/configuring.md"
 
-application_configuration = EDITOR.read(APPLICATION_CONFIGURATION_PATH)
+class AttributeVisitor < SyntaxTree::Visitor
+  attr_reader :attribute_map
 
-SyntaxTree.parse(application_configuration) => SyntaxTree::Program[
-  statements: SyntaxTree::Statements[
-    body: [*, SyntaxTree::ModuleDeclaration => module_rails, *]
-  ]
-]
+  def initialize
+    @attribute_map = {}
+    @namespace_stack = []
+  end
 
-module_rails => SyntaxTree::ModuleDeclaration[
-  bodystmt: SyntaxTree::BodyStmt[
-    statements: SyntaxTree::Statements[
-      body: [*, SyntaxTree::ClassDeclaration => class_application, *]
-    ]
-  ]
-]
+  def with_namespace(node)
+    @namespace_stack << node.constant.constant.value
+    visit_child_nodes(node)
+    @namespace_stack.pop
+  end
 
-class_application => SyntaxTree::ClassDeclaration[
-  bodystmt: SyntaxTree::BodyStmt[
-    statements: SyntaxTree::Statements[
-      body: [*, SyntaxTree::ClassDeclaration => class_configuration, *]
-    ]
-  ]
-]
+  visit_method alias_method :visit_module, :with_namespace
 
-class_configuration => SyntaxTree::ClassDeclaration[
-  bodystmt: SyntaxTree::BodyStmt[
-    statements: SyntaxTree::Statements[
-      body: [
-        SyntaxTree::Command[
-          message: SyntaxTree::Ident[value: "attr_accessor"]
-        ] => attr_accessors,
-        *
-      ]
-    ]
-  ]
-]
+  visit_method alias_method :visit_class, :with_namespace
+
+  visit_method def visit_command(node)
+    attr_access = node.message.value
+    return unless ATTRIBUTE_METHODS.include?(attr_access)
+
+    full_namespace = @namespace_stack.join("::")
+
+    @attribute_map[full_namespace] ||= {}
+    @attribute_map[full_namespace][attr_access] ||= Set.new
+
+    attributes = node.arguments.parts.map { |p| p.value.value }
+
+    @attribute_map[full_namespace][attr_access].merge(attributes)
+  end
+
+  private
+
+  ATTRIBUTE_METHODS = %w[attr_accessor attr_reader attr_writer]
+end
+
+application_configuration_tree = EDITOR.parse(APPLICATION_CONFIGURATION_PATH)
+
+visitor = AttributeVisitor.new
+visitor.visit(application_configuration_tree)
 
 config_values =
-  attr_accessors.arguments.parts.map { |part| part.value.value }.sort
+  visitor.attribute_map["Rails::Application::Configuration"]["attr_accessor"]
 
 configuring_raw = EDITOR.read(CONFIGURING_DOC_PATH)
 
