@@ -22,3 +22,16 @@ jobs:
         repository: rails/rails
         path: rails
     - run: bin/check-config-docs ./rails
+  daily-check-changelogs:
+    name: Check CHANGELOGS (rails main)
+    runs-on: ubuntu-20-04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.1
+      - uses: actions/checkout@v3
+        with:
+          repository: rails/rails
+          path: rails
+      - run: bin/check-changelogs ./rails
