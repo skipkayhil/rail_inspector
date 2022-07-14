@@ -24,14 +24,15 @@ jobs:
     - run: bin/check-config-docs ./rails
   daily-check-changelogs:
     name: Check CHANGELOGS (rails main)
-    runs-on: ubuntu-20-04
+    runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 3.1
-      - uses: actions/checkout@v3
-        with:
-          repository: rails/rails
-          path: rails
-      - run: bin/check-changelogs ./rails
+    - uses: actions/checkout@v3
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.1
+        bundler-cache: true
+    - uses: actions/checkout@v3
+      with:
+        repository: rails/rails
+        path: rails
+    - run: bin/check-changelogs ./rails
