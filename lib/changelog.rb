@@ -20,9 +20,10 @@ module Changelog
     end
 
     def to_s
-      entry = header
-      entry += (description + "\n\n") if description
-      entry += (authors || "FIXME") + "\n\n"
+      entry = +""
+      entry << (header || "FIXME")
+      entry << (description + "\n\n") if description
+      entry << (authors || "FIXME") + "\n\n"
       entry
     end
   end
@@ -47,8 +48,8 @@ module Changelog
 
     def parse
       until @buffer.eos?
-        next parse_footer if peek_footer?
-        pop_entry if @buffer.peek(1) == "*"
+        next pop_entry && parse_footer if peek_footer?
+        pop_entry if @buffer.peek(1) == "*" && !@sections.empty?
         parse_section
       end
 
