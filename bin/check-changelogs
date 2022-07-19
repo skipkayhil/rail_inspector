@@ -7,16 +7,14 @@ require "pathname"
 RAILS_PATH = Pathname.new(ARGV.first)
 CHANGELOG_PATHS = Dir[RAILS_PATH.join("*/CHANGELOG.md")]
 
-changelogs = CHANGELOG_PATHS.map { |path| File.read(path) }.map(&Changelog::Parser)
+changelogs = CHANGELOG_PATHS.map { |path| Changelog.new(path) }
 
 errors =
-  changelogs.flat_map do |entries|
-    invalid_entries = entries.reject(&:valid?)
-
-    output = invalid_entries.empty? ? "." : "F"
+  changelogs.reject do |changelog|
+    output = changelog.valid? ? "." : "F"
     $stdout.write(output)
 
-    invalid_entries
+    changelog.valid?
   end
 
 $stdout.write("\n\n")
@@ -24,9 +22,11 @@ $stdout.write("\n\n")
 unless errors.empty?
   puts "Offenses:\n\n"
 
-  errors.each do |e|
-    # puts e.path
-    puts e
+  errors.each do |changelog|
+    changelog.invalid_entries.each do |e|
+      puts changelog.path
+      puts e
+    end
   end
 end
 

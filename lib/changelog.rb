@@ -2,7 +2,7 @@
 
 require "strscan"
 
-module Changelog
+class Changelog
   class Entry
     attr_reader :header, :description, :authors
 
@@ -37,8 +37,6 @@ module Changelog
       method(:call).to_proc
     end
 
-    attr_reader :entries
-
     def initialize(file)
       @buffer = StringScanner.new(file)
       @sections = []
@@ -53,7 +51,7 @@ module Changelog
         parse_section
       end
 
-      entries
+      @entries
     end
 
     private
@@ -88,5 +86,26 @@ module Changelog
       @entries << Changelog::Entry.new(header, sections, authors)
       @sections.clear
     end
+  end
+
+  attr_reader :path, :entries
+
+  def initialize(path)
+    @path = path
+    @entries = parser.parse
+  end
+
+  def valid?
+    invalid_entries.empty?
+  end
+
+  def invalid_entries
+    @invalid_entries ||= entries.reject(&:valid?)
+  end
+
+  private
+
+  def parser
+    @parser ||= Parser.new(File.read(path))
   end
 end
