@@ -40,35 +40,25 @@ module Changelog
 
     def initialize(file)
       @buffer = StringScanner.new(file)
+      @sections = []
+
       @entries = []
     end
 
     def parse
       until @buffer.eos?
-        skip_whitespace
-        parse_entry_or_footer
+        next parse_footer if peek_footer?
+        pop_entry if @buffer.peek(1) == "*"
+        parse_section
       end
 
       entries
     end
 
-    def parse_entry_or_footer
-      peek_footer? ? parse_footer : parse_entry
-    end
+    private
 
-    def parse_entry
-      sections = []
-
-      begin
-        sections << @buffer.scan_until(/\n{2,}/)
-      end while @buffer.peek(1) != "*" && !peek_footer?
-
-      header = sections.shift if sections.first&.start_with?(/^\*/)
-      authors = sections.pop if sections.last&.match?(
-        /^\s+\*[\D\S]+(\s[\D\S]+)*\*/
-      )
-      sections = (sections.empty? ? nil : sections.join("\n\n"))
-      @entries << Changelog::Entry.new(header, sections, authors)
+    def parse_section
+      @sections << @buffer.scan_until(/\n{2,}/)
     end
 
     FOOTER_TEXT = "Please check"
@@ -83,8 +73,19 @@ module Changelog
       @buffer.peek(FOOTER_TEXT.length) == FOOTER_TEXT
     end
 
-    def skip_whitespace
-      @buffer.skip(/\s+/)
+    # def skip_whitespace
+    #   @buffer.skip(/\s+/)
+    # end
+
+    def pop_entry
+      header = @sections.shift if @sections.first&.start_with?(/^\*/)
+      authors = @sections.pop if @sections.last&.match?(
+        /^\s+\*[^\d\s]+(\s[^\d\s]+)*\*/
+      )
+      sections = (@sections.empty? ? nil : @sections.join("\n\n"))
+
+      @entries << Changelog::Entry.new(header, sections, authors)
+      @sections.clear
     end
   end
 end
