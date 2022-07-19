@@ -2,4 +2,6 @@
 
 source "https://rubygems.org"
 
+gem "minitest"
+gem "rake"
 gem "syntax_tree"

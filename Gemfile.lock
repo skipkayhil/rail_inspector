@@ -1,7 +1,9 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    minitest (5.16.2)
     prettier_print (0.1.0)
+    rake (13.0.6)
     syntax_tree (2.7.1)
       prettier_print
 
@@ -9,6 +11,8 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  minitest
+  rake
   syntax_tree
 
 BUNDLED WITH
