@@ -4,10 +4,9 @@ require "strscan"
 
 module Changelog
   class Entry
-    attr_reader :path, :header, :description, :authors
+    attr_reader :header, :description, :authors
 
-    def initialize(path, header, description, authors)
-      @path = path
+    def initialize(header, description, authors)
       @header = header
       @description = description
       @authors = authors
@@ -29,19 +28,18 @@ module Changelog
   end
 
   class Parser
-    def self.call(path)
-      new(path).parse
+    def self.call(file)
+      new(file).parse
     end
 
     def self.to_proc
       method(:call).to_proc
     end
 
-    attr_reader :path, :entries
+    attr_reader :entries
 
-    def initialize(path)
-      @path = path
-      @buffer = StringScanner.new(File.read(path))
+    def initialize(file)
+      @buffer = StringScanner.new(file)
       @entries = []
     end
 
@@ -70,7 +68,7 @@ module Changelog
         /^\s+\*[\D\S]+(\s[\D\S]+)*\*/
       )
       sections = (sections.empty? ? nil : sections.join("\n\n"))
-      @entries << Changelog::Entry.new(path, header, sections, authors)
+      @entries << Changelog::Entry.new(header, sections, authors)
     end
 
     FOOTER_TEXT = "Please check"
