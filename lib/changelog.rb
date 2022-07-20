@@ -46,8 +46,14 @@ class Changelog
 
     def parse
       until @buffer.eos?
-        next pop_entry && parse_footer if peek_footer?
-        pop_entry if @buffer.peek(1) == "*" && !@sections.empty?
+        next if @buffer.scan("\n")
+
+        if peek_footer?
+          pop_entry
+          next parse_footer
+        end
+
+        pop_entry if @buffer.peek(1) == "*"
         parse_section
       end
 
@@ -77,6 +83,8 @@ class Changelog
     # end
 
     def pop_entry
+      return if @sections.empty?
+
       header = @sections.shift if @sections.first&.start_with?(/^\*/)
       authors = @sections.pop if @sections.last&.match?(
         /^\s+\*[^\d\s]+(\s[^\d\s]+)*\*/

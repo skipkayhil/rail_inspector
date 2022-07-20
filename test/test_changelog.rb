@@ -21,4 +21,12 @@ class TestChangelog < Minitest::Test
 
     assert_equal 2, invalid_entries.length
   end
+
+  def test_parses_with_extra_newlines
+    changelog = changelog_fixture("action_mailbox_b5a758d.md").read
+
+    entries = Changelog::Parser.new(changelog).parse
+
+    assert_equal 0, entries.length
+  end
 end
