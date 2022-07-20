@@ -7,26 +7,28 @@ class TestChangelog < Minitest::Test
   include ChangelogFixtures
 
   def test_parses_changelog_file
-    railties_changelog = changelog_fixture("railties_06e9fbd.md").read
-
-    entries = Changelog::Parser.new(railties_changelog).parse
+    @changelog = changelog_fixture("railties_06e9fbd.md")
 
     assert_equal 21, entries.length
   end
 
   def test_entries_without_author_are_invalid
-    active_support_changelog = changelog_fixture("active_support_2cf8f37.md").read
+    @changelog = changelog_fixture("active_support_2cf8f37.md")
 
-    invalid_entries = Changelog::Parser.new(active_support_changelog).parse.reject(&:valid?)
+    invalid_entries = entries.reject(&:valid?)
 
     assert_equal 2, invalid_entries.length
   end
 
   def test_parses_with_extra_newlines
-    changelog = changelog_fixture("action_mailbox_b5a758d.md").read
-
-    entries = Changelog::Parser.new(changelog).parse
+    @changelog = changelog_fixture("action_mailbox_b5a758d.md")
 
     assert_equal 0, entries.length
+  end
+
+  private
+
+  def entries
+    Changelog::Parser.new(@changelog).parse
   end
 end

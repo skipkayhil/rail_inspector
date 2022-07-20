@@ -8,6 +8,6 @@ module ChangelogFixtures
 
     raise ArgumentError, "#{name} fixture not found" unless path.exist?
 
-    path
+    path.read
   end
 end
