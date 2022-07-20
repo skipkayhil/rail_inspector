@@ -13,7 +13,6 @@ class Changelog
     end
 
     def valid?
-      return false unless @header
       return false unless @authors
 
       true
@@ -21,9 +20,9 @@ class Changelog
 
     def to_s
       entry = +""
-      entry << (header || "FIXME")
-      entry << (description + "\n\n") if description
-      entry << (authors || "FIXME") + "\n\n"
+      entry << header
+      entry << description.join
+      entry << "*Missing Author*\n\n" unless @authors
       entry
     end
   end
@@ -39,22 +38,21 @@ class Changelog
 
     def initialize(file)
       @buffer = StringScanner.new(file)
-      @sections = []
+      @lines = []
 
       @entries = []
     end
 
     def parse
       until @buffer.eos?
-        next if @buffer.scan("\n")
-
         if peek_footer?
           pop_entry
           next parse_footer
         end
 
         pop_entry if @buffer.peek(1) == "*"
-        parse_section
+
+        parse_line
       end
 
       @entries
@@ -62,8 +60,8 @@ class Changelog
 
     private
 
-    def parse_section
-      @sections << @buffer.scan_until(/\n{2,}/)
+    def parse_line
+      @lines << @buffer.scan_until(/\n/)
     end
 
     FOOTER_TEXT = "Please check"
@@ -78,21 +76,17 @@ class Changelog
       @buffer.peek(FOOTER_TEXT.length) == FOOTER_TEXT
     end
 
-    # def skip_whitespace
-    #   @buffer.skip(/\s+/)
-    # end
-
     def pop_entry
-      return if @sections.empty?
+      # Ensure we don't pop an entry if we only see newlines and the footer
+      return unless @lines.any? { |line| line.match?(/\S/) }
 
-      header = @sections.shift if @sections.first&.start_with?(/^\*/)
-      authors = @sections.pop if @sections.last&.match?(
-        /^\s+\*[^\d\s]+(\s[^\d\s]+)*\*/
-      )
-      sections = (@sections.empty? ? nil : @sections.join("\n\n"))
+      header = @lines.shift
 
-      @entries << Changelog::Entry.new(header, sections, authors)
-      @sections.clear
+      authors =
+        @lines.reverse.find { |line| line.match?(/\*[^\d\s]+(\s[^\d\s]+)*\*/) }
+
+      @entries << Changelog::Entry.new(header, @lines, authors)
+      @lines = []
     end
   end
 
