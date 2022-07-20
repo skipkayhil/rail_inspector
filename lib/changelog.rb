@@ -4,26 +4,37 @@ require "strscan"
 
 class Changelog
   class Entry
-    attr_reader :header, :description, :authors
+    attr_reader :header, :description, :authors, :errors
 
     def initialize(header, description, authors)
       @header = header
       @description = description
       @authors = authors
+
+      @errors = []
+
+      validate_whitespace
     end
 
     def valid?
-      return false unless @authors
-
-      true
+      @authors && @errors.empty?
     end
 
     def to_s
       entry = +""
-      entry << header
-      entry << description.join
-      entry << "*Missing Author*\n\n" unless @authors
+      entry << "#{header}\n"
+      entry << "#{description.join("\n")}\n"
+      entry << "    *Missing Author*\n\n" unless @authors
       entry
+    end
+
+    private
+
+    def validate_whitespace
+      @description.each do |line|
+        next unless line.end_with?(" ", "\t")
+        @errors << { line: line, range: line.rstrip.length..line.length }
+      end
     end
   end
 
@@ -61,7 +72,7 @@ class Changelog
     private
 
     def parse_line
-      @lines << @buffer.scan_until(/\n/)
+      @lines << @buffer.scan_until(/\n/)[0...-1]
     end
 
     FOOTER_TEXT = "Please check"
