@@ -23,22 +23,19 @@ class Changelog
 
       @offenses = []
 
+      validate_authors
       validate_whitespace
     end
 
-    def valid?
-      @authors && @offenses.empty?
-    end
-
-    def to_s
-      entry = +""
-      entry << "#{header}\n"
-      entry << "#{description.join("\n")}\n"
-      entry << "    *Missing Author*\n\n" unless @authors
-      entry
-    end
-
     private
+
+    def validate_authors
+      return if @authors
+
+      @offenses << Offense.new(
+        header, 0..header.length - 1, "CHANGELOG entry is missing authors."
+      )
+    end
 
     def validate_whitespace
       @description.each do |line|

@@ -15,9 +15,7 @@ class TestChangelog < Minitest::Test
   def test_entries_without_author_are_invalid
     @changelog = changelog_fixture("active_support_2cf8f37.md")
 
-    invalid_entries = entries.reject(&:valid?)
-
-    assert_equal 2, invalid_entries.length
+    assert_equal 2, offenses.length
   end
 
   def test_parses_with_extra_newlines
@@ -29,12 +27,16 @@ class TestChangelog < Minitest::Test
   def test_entries_with_trailing_whitespace_are_invalid
     @changelog = changelog_fixture("active_record_6673d8e.md")
 
-    assert_equal 15, entries.flat_map(&:offenses).length
+    assert_equal 15, offenses.length
   end
 
   private
 
   def entries
     Changelog::Parser.new(@changelog).parse
+  end
+
+  def offenses
+    entries.flat_map(&:offenses)
   end
 end
