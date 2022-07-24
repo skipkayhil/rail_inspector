@@ -8,8 +8,9 @@ RAILS_PATH = Pathname.new(ARGV.first)
 CHANGELOG_PATHS = Dir[RAILS_PATH.join("*/CHANGELOG.md")]
 
 changelogs = CHANGELOG_PATHS.map { |path| Changelog.new(path) }
+formatter = Changelog::Formatter.new
 
-errors =
+invalid_changelogs =
   changelogs.reject do |changelog|
     output = changelog.valid? ? "." : "F"
     $stdout.write(output)
@@ -17,18 +18,10 @@ errors =
     changelog.valid?
   end
 
-$stdout.write("\n\n")
+puts "\n\n"
+puts "Offenses:\n\n" unless invalid_changelogs.empty?
 
-unless errors.empty?
-  puts "Offenses:\n\n"
+changelogs.each(&formatter)
+formatter.finish
 
-  errors.each do |changelog|
-    changelog.invalid_entries.each do |e|
-      puts changelog.path
-      puts e
-    end
-  end
-end
-
-puts "#{changelogs.length} changelogs inspected, #{errors.length} offense#{"s" unless errors.length == 1} detected"
-exit errors.empty?
+exit invalid_changelogs.empty?

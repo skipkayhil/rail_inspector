@@ -3,21 +3,31 @@
 require "strscan"
 
 class Changelog
+  class Offense
+    attr_reader :line, :range, :message
+
+    def initialize(line, range, message)
+      @line = line
+      @range = range
+      @message = message
+    end
+  end
+
   class Entry
-    attr_reader :header, :description, :authors, :errors
+    attr_reader :header, :description, :authors, :offenses
 
     def initialize(header, description, authors)
       @header = header
       @description = description
       @authors = authors
 
-      @errors = []
+      @offenses = []
 
       validate_whitespace
     end
 
     def valid?
-      @authors && @errors.empty?
+      @authors && @offenses.empty?
     end
 
     def to_s
@@ -33,7 +43,11 @@ class Changelog
     def validate_whitespace
       @description.each do |line|
         next unless line.end_with?(" ", "\t")
-        @errors << { line: line, range: line.rstrip.length..line.length }
+        @offenses << Offense.new(
+          line,
+          (line.rstrip.length + 1)..line.length,
+          "Trailing whitespace detected."
+        )
       end
     end
   end
@@ -101,6 +115,37 @@ class Changelog
     end
   end
 
+  class Formatter
+    def initialize
+      @changelog_count = 0
+      @offense_count = 0
+    end
+
+    def to_proc
+      method(:call).to_proc
+    end
+
+    def call(changelog)
+      @changelog_count += 1
+
+      changelog.offenses.each { |o| process_offense(changelog, o) }
+    end
+
+    def finish
+      puts "#{@changelog_count} changelogs inspected, #{@offense_count} offense#{"s" unless @offense_count == 1} detected"
+    end
+
+    private
+
+    def process_offense(file, offense)
+      @offense_count += 1
+
+      puts "#{file.path}: #{offense.message}"
+      puts offense.line
+      puts ("^" * offense.range.count).rjust(offense.range.end)
+    end
+  end
+
   attr_reader :path, :entries
 
   def initialize(path)
@@ -109,11 +154,11 @@ class Changelog
   end
 
   def valid?
-    invalid_entries.empty?
+    offenses.empty?
   end
 
-  def invalid_entries
-    @invalid_entries ||= entries.reject(&:valid?)
+  def offenses
+    @offenses ||= entries.flat_map(&:offenses)
   end
 
   private
