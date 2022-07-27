@@ -91,7 +91,7 @@ class Changelog
           next parse_footer
         end
 
-        pop_entry if @buffer.peek(1) == "*"
+        pop_entry if peek_probably_header?
 
         parse_line
       end
@@ -111,6 +111,12 @@ class Changelog
       @buffer.scan(
         /#{FOOTER_TEXT} \[\d-\d-stable\]\(.*\) for previous changes\.\n/
       )
+    end
+
+    def peek_probably_header?
+      return false unless @buffer.peek(1) == "*"
+
+      !@buffer.check_until(/\n/).strip.end_with?("*")
     end
 
     def peek_footer?

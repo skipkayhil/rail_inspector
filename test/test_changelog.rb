@@ -33,7 +33,13 @@ class TestChangelog < Minitest::Test
   def test_entries_without_four_leading_spaces
     @changelog = changelog_fixture("active_record_445d400.md")
 
-    assert_equal 6, offenses.length
+    assert_equal 5, offenses.length
+  end
+
+  def test_entries_with_incorrectly_indented_header
+    @changelog = changelog_fixture("active_record_51852d2.md")
+
+    assert_equal 1, offenses.length
   end
 
   private
