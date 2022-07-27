@@ -13,25 +13,25 @@ class TestChangelog < Minitest::Test
   end
 
   def test_entries_without_author_are_invalid
-    @changelog = changelog_fixture("active_support_2cf8f37.md")
+    @changelog = changelog_fixture("active_support_9f0b8eb.md")
 
     assert_equal 2, offenses.length
   end
 
   def test_parses_with_extra_newlines
-    @changelog = changelog_fixture("action_mailbox_b5a758d.md")
+    @changelog = changelog_fixture("action_mailbox_83d85b2.md")
 
     assert_equal 0, entries.length
   end
 
   def test_entries_with_trailing_whitespace_are_invalid
-    @changelog = changelog_fixture("active_record_6673d8e.md")
+    @changelog = changelog_fixture("active_record_936a862.md")
 
     assert_equal 16, offenses.length
   end
 
   def test_entries_without_four_leading_spaces
-    @changelog = changelog_fixture("active_record_445d400.md")
+    @changelog = changelog_fixture("active_record_238432d.md")
 
     assert_equal 5, offenses.length
   end
