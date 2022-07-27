@@ -30,6 +30,12 @@ class TestChangelog < Minitest::Test
     assert_equal 16, offenses.length
   end
 
+  def test_entries_without_four_leading_spaces
+    @changelog = changelog_fixture("active_record_445d400.md")
+
+    assert_equal 6, offenses.length
+  end
+
   private
 
   def entries

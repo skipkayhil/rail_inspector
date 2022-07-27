@@ -22,7 +22,8 @@ class Changelog
       @offenses = []
 
       validate_authors
-      validate_whitespace
+      validate_leading_whitespace
+      validate_trailing_whitespace
     end
 
     private
@@ -41,7 +42,21 @@ class Changelog
       )
     end
 
-    def validate_whitespace
+    def validate_leading_whitespace
+      unless header.match?(/\* {3}\S/)
+        @offenses << Offense.new(header, 0..3, "CHANGELOG header must start with '*' and 3 spaces")
+      end
+
+      lines.each_with_index do |line, i|
+        next if i == 0
+        next if line.empty?
+        next if line.start_with?(" " * 4)
+
+        @offenses << Offense.new(line, 0..3, "CHANGELOG line must be indented 4 spaces")
+      end
+    end
+
+    def validate_trailing_whitespace
       lines.each do |line|
         next unless line.end_with?(" ", "\t")
         @offenses << Offense.new(
