@@ -27,7 +27,7 @@ class TestChangelog < Minitest::Test
   def test_entries_with_trailing_whitespace_are_invalid
     @changelog = changelog_fixture("active_record_6673d8e.md")
 
-    assert_equal 15, offenses.length
+    assert_equal 16, offenses.length
   end
 
   private

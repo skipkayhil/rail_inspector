@@ -14,12 +14,10 @@ class Changelog
   end
 
   class Entry
-    attr_reader :header, :description, :authors, :offenses
+    attr_reader :lines, :offenses
 
-    def initialize(header, description, authors)
-      @header = header
-      @description = description
-      @authors = authors
+    def initialize(lines)
+      @lines = lines
 
       @offenses = []
 
@@ -29,8 +27,14 @@ class Changelog
 
     private
 
+    def header
+      lines.first
+    end
+
     def validate_authors
-      return if @authors
+      authors = lines.reverse.find { |line| line.match?(/\*[^\d\s]+(\s[^\d\s]+)*\*/) }
+
+      return if authors
 
       @offenses << Offense.new(
         header, 0..header.length - 1, "CHANGELOG entry is missing authors."
@@ -38,7 +42,7 @@ class Changelog
     end
 
     def validate_whitespace
-      @description.each do |line|
+      lines.each do |line|
         next unless line.end_with?(" ", "\t")
         @offenses << Offense.new(
           line,
@@ -102,12 +106,7 @@ class Changelog
       # Ensure we don't pop an entry if we only see newlines and the footer
       return unless @lines.any? { |line| line.match?(/\S/) }
 
-      header = @lines.shift
-
-      authors =
-        @lines.reverse.find { |line| line.match?(/\*[^\d\s]+(\s[^\d\s]+)*\*/) }
-
-      @entries << Changelog::Entry.new(header, @lines, authors)
+      @entries << Changelog::Entry.new(@lines)
       @lines = []
     end
   end
