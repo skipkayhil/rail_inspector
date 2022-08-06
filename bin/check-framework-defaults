@@ -1,0 +1,185 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "syntax_tree"
+
+class RailsFileEditor
+  def initialize(rails_path)
+    @rails_path = Pathname.new(rails_path)
+  end
+
+  def parse(relative_path)
+    file = read(relative_path)
+    SyntaxTree.parse(file)
+  end
+
+  def read(relative_path)
+    path = rails_path.join(relative_path)
+    SyntaxTree.read(path)
+  end
+
+  def write(relative_path, content)
+    path = rails_path.join(relative_path)
+    File.write(path, content)
+  end
+
+  private
+
+  attr_reader :rails_path
+end
+
+EDITOR = RailsFileEditor.new(ARGV.first)
+
+APPLICATION_CONFIGURATION_PATH =
+  "railties/lib/rails/application/configuration.rb"
+CONFIGURING_DOC_PATH = "guides/source/configuring.md"
+
+class FrameworkDefaultVisitor < SyntaxTree::Visitor
+  attr_reader :config_map
+
+  def initialize
+    @config_map = {}
+    @target_version_block = false
+    @current_version = nil
+    @current_framework = nil
+  end
+
+  visit_method def visit_case(node)
+    return unless target_version_case?(node.value)
+
+    @target_version_block = true
+    visit_child_nodes(node)
+    @target_version_block = false
+  end
+
+  visit_method def visit_when(node)
+    return unless @target_version_block
+
+    @current_version = node.arguments.parts[0].parts[0].value
+
+    @config_map[@current_version] = {}
+    visit_child_nodes(node)
+
+    @current_version = nil
+  end
+
+  visit_method def visit_if(node)
+    return unless @target_version_block
+
+    @current_framework =
+      case node
+      in predicate: SyntaxTree::FCall[value: { value: "respond_to?" }]
+        node.predicate.arguments.arguments.parts[0].value.value
+      else
+        nil
+      end
+
+    visit_child_nodes(node)
+
+    @current_framework = nil
+  end
+
+  visit_method def visit_assign(node)
+    return unless @target_version_block
+
+    assert_framework(node)
+
+    target = SyntaxTree::Formatter.format(nil, node.target)
+    value =
+      case node.value
+      when SyntaxTree::StringConcat, SyntaxTree::HashLiteral
+        nil
+      else
+        SyntaxTree::Formatter.format(nil, node.value)
+      end
+    @config_map[@current_version][target] = value
+  end
+
+  private
+
+  def target_version_case?(node)
+    node in SyntaxTree::Call[
+      receiver: SyntaxTree::VarRef[
+        value: SyntaxTree::Ident[value: "target_version"]
+      ]
+    ]
+  end
+
+  def assert_framework(node)
+    framework =
+      case node.target.parent
+      in { value: SyntaxTree::Const } | { value: SyntaxTree::Kw[value: "self"] }
+        nil
+      in receiver: { value: { value: framework } }
+        framework
+      in value: { value: framework }
+        framework
+      end
+
+    return if @current_framework == framework
+
+    raise "Expected #{@current_framework} to match #{framework}"
+  end
+end
+
+application_configuration_tree = EDITOR.parse(APPLICATION_CONFIGURATION_PATH)
+
+visitor = FrameworkDefaultVisitor.new
+visitor.visit(application_configuration_tree)
+
+configuring_raw = EDITOR.read(CONFIGURING_DOC_PATH)
+
+before, versioned_defaults_section, after =
+  configuring_raw
+    .split("\n")
+    .slice_when do |_, next_line|
+      [
+        "### Versioned Default Values",
+        "### Rails General Configuration"
+      ].include?(next_line)
+    end
+    .to_a
+
+versioned_defaults_header, *version_defaults =
+  versioned_defaults_section
+    .slice_when { |_, next_line| next_line.start_with?("####") }
+    .to_a
+
+generated_defaults =
+  version_defaults.map do |defaults|
+    header, configs = defaults[0], defaults[2, defaults.length - 3]
+
+    version = header.match(/\d\.\d/)[0]
+
+    generated_doc =
+      visitor.config_map[version].map do |config, value|
+        full_config =
+          case config
+          when /^[A-Z]/
+            config
+          when /^self/
+            config.sub("self", "config")
+          else
+            "config.#{config}"
+          end
+
+        # TODO: bad fallback until I have a better solution for stringifiying
+        # HashLiteral ast and multiline string ast
+        value_with_fallback =
+          if value.nil?
+            configs.find { |c| c.include?(full_config) }.match(/ `(.*)`$/)[1]
+          else
+            value
+          end
+
+        "- [`#{full_config}`](##{full_config.tr("._", "-").downcase}): `#{value_with_fallback}`"
+      end
+
+    [header, "", *generated_doc.sort, ""]
+  end
+
+content_array =
+  before + versioned_defaults_header + generated_defaults.flatten + after
+content = content_array.join("\n") + "\n"
+# Uncomment to write changes
+# EDITOR.write(CONFIGURING_DOC_PATH, content)
