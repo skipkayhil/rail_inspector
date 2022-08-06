@@ -4,7 +4,7 @@ GEM
     minitest (5.16.2)
     prettier_print (0.1.0)
     rake (13.0.6)
-    syntax_tree (2.7.1)
+    syntax_tree (3.3.0)
       prettier_print
 
 PLATFORMS
@@ -16,4 +16,4 @@ DEPENDENCIES
   syntax_tree
 
 BUNDLED WITH
-   2.3.14
+   2.3.19
