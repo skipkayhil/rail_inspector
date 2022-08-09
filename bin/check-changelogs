@@ -7,7 +7,7 @@ require "pathname"
 RAILS_PATH = Pathname.new(ARGV.first)
 CHANGELOG_PATHS = Dir[RAILS_PATH.join("*/CHANGELOG.md")]
 
-changelogs = CHANGELOG_PATHS.map { |path| Changelog.new(path) }
+changelogs = CHANGELOG_PATHS.map { |path| Changelog.new(path, File.read(path)) }
 formatter = Changelog::Formatter.new
 
 invalid_changelogs =

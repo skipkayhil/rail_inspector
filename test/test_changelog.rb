@@ -45,7 +45,7 @@ class TestChangelog < Minitest::Test
   private
 
   def entries
-    Changelog::Parser.new(@changelog).parse
+    @changelog.entries
   end
 
   def offenses

@@ -163,10 +163,11 @@ class Changelog
     end
   end
 
-  attr_reader :path, :entries
+  attr_reader :path, :content, :entries
 
-  def initialize(path)
+  def initialize(path, content)
     @path = path
+    @content = content
     @entries = parser.parse
   end
 
@@ -181,6 +182,6 @@ class Changelog
   private
 
   def parser
-    @parser ||= Parser.new(File.read(path))
+    @parser ||= Parser.new(content)
   end
 end

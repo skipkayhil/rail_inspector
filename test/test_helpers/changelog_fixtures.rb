@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "changelog"
 require "pathname"
 
 module ChangelogFixtures
@@ -8,6 +9,6 @@ module ChangelogFixtures
 
     raise ArgumentError, "#{name} fixture not found" unless path.exist?
 
-    path.read
+    Changelog.new(path, path.read)
   end
 end
