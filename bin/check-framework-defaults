@@ -4,6 +4,7 @@ $:.unshift(File.expand_path("../lib", __dir__))
 require "bundler/setup"
 require "syntax_tree"
 
+require "configuring"
 require "visitor/framework_default"
 
 class RailsFileEditor
@@ -43,20 +44,11 @@ visitor = Visitor::FrameworkDefault.new
 visitor.visit(application_configuration_tree)
 
 configuring_raw = EDITOR.read(CONFIGURING_DOC_PATH)
-
-before, versioned_defaults_section, after =
-  configuring_raw
-    .split("\n")
-    .slice_when do |_, next_line|
-      [
-        "### Versioned Default Values",
-        "### Rails General Configuration"
-      ].include?(next_line)
-    end
-    .to_a
+doc = Configuring::Doc.new(configuring_raw)
 
 versioned_defaults_header, *version_defaults =
-  versioned_defaults_section
+  doc
+    .versioned_defaults
     .slice_when { |_, next_line| next_line.start_with?("####") }
     .to_a
 
@@ -93,8 +85,7 @@ generated_defaults =
     [header, "", *generated_doc.sort, ""]
   end
 
-content_array =
-  before + versioned_defaults_header + generated_defaults.flatten + after
-content = content_array.join("\n") + "\n"
+doc.versioned_defaults = versioned_defaults_header + generated_defaults.flatten
+
 # Uncomment to write changes
-# EDITOR.write(CONFIGURING_DOC_PATH, content)
+# EDITOR.write(CONFIGURING_DOC_PATH, doc.to_s)
