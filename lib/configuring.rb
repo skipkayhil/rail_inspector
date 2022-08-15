@@ -53,4 +53,19 @@ class Configuring
       (@before + @versioned_defaults + @after).join("\n") + "\n"
     end
   end
+
+  attr_reader :parser, :resolver
+
+  def initialize(rails_path)
+    @parser = CachedParser.new
+    @resolver = Resolver.new(rails_path)
+  end
+
+  def doc
+    @doc ||=
+      begin
+        content = File.read(resolver.call(:doc))
+        Configuring::Doc.new(content)
+      end
+  end
 end

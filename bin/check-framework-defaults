@@ -6,19 +6,17 @@ require "bundler/setup"
 require "configuring"
 require "visitor/framework_default"
 
-PARSER = Configuring::CachedParser.new
-RESOLVER = Configuring::Resolver.new(ARGV.first)
+checker = Configuring.new(ARGV.first)
 
-application_configuration_tree = PARSER.call(RESOLVER.call(:app_config))
+application_configuration_tree =
+  checker.parser.call(checker.resolver.call(:app_config))
 
 visitor = Visitor::FrameworkDefault.new
 visitor.visit(application_configuration_tree)
 
-configuring_raw = File.read(RESOLVER.call(:doc))
-doc = Configuring::Doc.new(configuring_raw)
-
 versioned_defaults_header, *version_defaults =
-  doc
+  checker
+    .doc
     .versioned_defaults
     .slice_when { |_, next_line| next_line.start_with?("####") }
     .to_a
@@ -56,7 +54,8 @@ generated_defaults =
     [header, "", *generated_doc.sort, ""]
   end
 
-doc.versioned_defaults = versioned_defaults_header + generated_defaults.flatten
+checker.doc.versioned_defaults =
+  versioned_defaults_header + generated_defaults.flatten
 
 # Uncomment to write changes
-# File.write(RESOLVER.call(:doc), doc.to_s)
+File.write(checker.resolver.call(:doc), checker.doc.to_s)
