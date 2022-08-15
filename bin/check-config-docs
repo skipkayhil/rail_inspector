@@ -3,6 +3,7 @@
 $:.unshift(File.expand_path("../lib", __dir__))
 require "bundler/setup"
 
+require "configuring"
 require "visitor/attribute"
 require "optparse"
 require "set"
@@ -18,90 +19,9 @@ OptionParser
   end
   .parse!(into: OPTIONS)
 
-class RailsFileEditor
-  def initialize(rails_path)
-    @rails_path = Pathname.new(rails_path)
-  end
+checker = Configuring.new(ARGV.first)
+checker.check
 
-  def parse(relative_path)
-    file = read(relative_path)
-    SyntaxTree.parse(file)
-  end
+exit checker.errors.empty? unless OPTIONS[:a]
 
-  def read(relative_path)
-    path = rails_path.join(relative_path)
-    SyntaxTree.read(path)
-  end
-
-  def write(relative_path, content)
-    path = rails_path.join(relative_path)
-    File.write(path, content)
-  end
-
-  private
-
-  attr_reader :rails_path
-end
-
-EDITOR = RailsFileEditor.new(ARGV.first)
-
-APPLICATION_CONFIGURATION_PATH =
-  "railties/lib/rails/application/configuration.rb"
-CONFIGURING_DOC_PATH = "guides/source/configuring.md"
-application_configuration_tree = EDITOR.parse(APPLICATION_CONFIGURATION_PATH)
-
-visitor = Visitor::Attribute.new
-visitor.visit(application_configuration_tree)
-
-config_values =
-  visitor.attribute_map["Rails::Application::Configuration"]["attr_accessor"]
-
-configuring_raw = EDITOR.read(CONFIGURING_DOC_PATH)
-
-before, general_config, after =
-  configuring_raw
-    .split("\n")
-    .slice_when do |_, next_line|
-      ["### Rails General Configuration", "### Configuring Assets"].include?(
-        next_line
-      )
-    end
-    .to_a
-
-general_config_header, *config_sections =
-  general_config
-    .slice_when { |line, next_line| next_line.start_with?("####") }
-    .to_a
-
-# TODO: remove this after making credentials and public_file_server not
-# attr_accessor
-config_values.delete_if do |e|
-  config_sections.any? { |section| /\.#{e}\./.match?(section[0]) }
-end
-
-added_count = 0
-config_values.each do |value|
-  header = "#### `config.#{value}`"
-
-  if config_sections.any? { |section| section[0] == header }
-    $stdout.write(".")
-  else
-    $stdout.write("M")
-    added_count += 1
-
-    config_sections << [header, "", "FIXME", ""]
-  end
-end
-
-unless OPTIONS[:a]
-  puts "\n\nFound #{added_count} missing options"
-  exit added_count == 0
-end
-
-config_sections.sort_by! { |section| section[0].split("`")[1] }
-
-content_array = before + general_config_header + config_sections + after
-content = content_array.join("\n") + "\n"
-EDITOR.write(CONFIGURING_DOC_PATH, content)
-
-puts "\n\nAdded #{added_count} options"
+File.write(checker.resolver.call(:doc), checker.doc.to_s)

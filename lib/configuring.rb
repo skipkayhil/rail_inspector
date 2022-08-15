@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require_relative "configuring/check/framework_defaults"
+require_relative "./configuring/check/general_configuration"
+require_relative "./configuring/check/framework_defaults"
 
 class Configuring
   class CachedParser
@@ -36,35 +37,40 @@ class Configuring
   end
 
   class Doc
-    attr_accessor :versioned_defaults
+    attr_accessor :general_config, :versioned_defaults
 
     def initialize(content)
-      @before, @versioned_defaults, @after =
+      @before, @versioned_defaults, @general_config, @after =
         content
           .split("\n")
           .slice_before do |line|
             [
               "### Versioned Default Values",
-              "### Rails General Configuration"
+              "### Rails General Configuration",
+              "### Configuring Assets"
             ].include?(line)
           end
           .to_a
     end
 
     def to_s
-      (@before + @versioned_defaults + @after).join("\n") + "\n"
+      (@before + @versioned_defaults + @general_config + @after).join("\n") +
+        "\n"
     end
   end
 
-  attr_reader :parser, :resolver
+  attr_reader :errors, :parser, :resolver
 
   def initialize(rails_path)
+    @errors = []
     @parser = CachedParser.new
     @resolver = Resolver.new(rails_path)
   end
 
   def check
-    [Check::FrameworkDefaults].each { |check| check.new(self).check }
+    [Check::GeneralConfiguration, Check::FrameworkDefaults].each do |check|
+      check.new(self).check
+    end
   end
 
   def doc
