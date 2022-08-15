@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "configuring/check/framework_defaults"
+
 class Configuring
   class CachedParser
     def initialize
@@ -61,11 +63,19 @@ class Configuring
     @resolver = Resolver.new(rails_path)
   end
 
+  def check
+    [Check::FrameworkDefaults].each { |check| check.new(self).check }
+  end
+
   def doc
     @doc ||=
       begin
         content = File.read(resolver.call(:doc))
         Configuring::Doc.new(content)
       end
+  end
+
+  def parse(name)
+    parser.call(resolver.call(name))
   end
 end
