@@ -4,10 +4,11 @@ require "strscan"
 
 class Changelog
   class Offense
-    attr_reader :line, :range, :message
+    attr_reader :line, :line_number, :range, :message
 
-    def initialize(line, range, message)
+    def initialize(line, line_number, range, message)
       @line = line
+      @line_number = line_number
       @range = range
       @message = message
     end
@@ -16,8 +17,9 @@ class Changelog
   class Entry
     attr_reader :lines, :offenses
 
-    def initialize(lines)
+    def initialize(lines, starting_line)
       @lines = lines
+      @starting_line = starting_line
 
       @offenses = []
 
@@ -33,18 +35,27 @@ class Changelog
     end
 
     def validate_authors
-      authors = lines.reverse.find { |line| line.match?(/\*[^\d\s]+(\s[^\d\s]+)*\*/) }
+      authors =
+        lines.reverse.find { |line| line.match?(/\*[^\d\s]+(\s[^\d\s]+)*\*/) }
 
       return if authors
 
-      @offenses << Offense.new(
-        header, 0..header.length - 1, "CHANGELOG entry is missing authors."
+      add_offense(
+        header,
+        line_in_file(0),
+        0..header.length - 1,
+        "CHANGELOG entry is missing authors."
       )
     end
 
     def validate_leading_whitespace
       unless header.match?(/\* {3}\S/)
-        @offenses << Offense.new(header, 0..3, "CHANGELOG header must start with '*' and 3 spaces")
+        add_offense(
+          header,
+          line_in_file(0),
+          0..3,
+          "CHANGELOG header must start with '*' and 3 spaces"
+        )
       end
 
       lines.each_with_index do |line, i|
@@ -52,19 +63,36 @@ class Changelog
         next if line.empty?
         next if line.start_with?(" " * 4)
 
-        @offenses << Offense.new(line, 0..3, "CHANGELOG line must be indented 4 spaces")
+        add_offense(
+          line,
+          line_in_file(i),
+          0..3,
+          "CHANGELOG line must be indented 4 spaces"
+        )
       end
     end
 
     def validate_trailing_whitespace
-      lines.each do |line|
+      lines.each_with_index do |line, i|
         next unless line.end_with?(" ", "\t")
-        @offenses << Offense.new(
+
+        add_offense(
           line,
+          line_in_file(i),
           (line.rstrip.length + 1)..line.length,
           "Trailing whitespace detected."
         )
       end
+    end
+
+    private
+
+    def add_offense(...)
+      @offenses << Offense.new(...)
+    end
+
+    def line_in_file(line_in_entry)
+      @starting_line + line_in_entry
     end
   end
 
@@ -80,6 +108,7 @@ class Changelog
     def initialize(file)
       @buffer = StringScanner.new(file)
       @lines = []
+      @current_line = 1
 
       @entries = []
     end
@@ -102,6 +131,7 @@ class Changelog
     private
 
     def parse_line
+      @current_line += 1
       @lines << @buffer.scan_until(/\n/)[0...-1]
     end
 
@@ -127,7 +157,7 @@ class Changelog
       # Ensure we don't pop an entry if we only see newlines and the footer
       return unless @lines.any? { |line| line.match?(/\S/) }
 
-      @entries << Changelog::Entry.new(@lines)
+      @entries << Changelog::Entry.new(@lines, @current_line - @lines.length)
       @lines = []
     end
   end
@@ -157,7 +187,7 @@ class Changelog
     def process_offense(file, offense)
       @offense_count += 1
 
-      puts "#{file.path}: #{offense.message}"
+      puts "#{file.path}:#{offense.line_number} #{offense.message}"
       puts offense.line
       puts ("^" * offense.range.count).rjust(offense.range.end)
     end
