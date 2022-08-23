@@ -43,7 +43,7 @@ class Changelog
       add_offense(
         header,
         line_in_file(0),
-        0..header.length - 1,
+        1..header.length,
         "CHANGELOG entry is missing authors."
       )
     end
@@ -53,7 +53,7 @@ class Changelog
         add_offense(
           header,
           line_in_file(0),
-          0..3,
+          1..4,
           "CHANGELOG header must start with '*' and 3 spaces"
         )
       end
@@ -66,7 +66,7 @@ class Changelog
         add_offense(
           line,
           line_in_file(i),
-          0..3,
+          1..4,
           "CHANGELOG line must be indented 4 spaces"
         )
       end

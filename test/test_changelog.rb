@@ -42,6 +42,47 @@ class TestChangelog < Minitest::Test
     assert_equal 1, offenses.length
   end
 
+  def test_validate_authors
+    assert_offense(<<~CHANGELOG)
+      *   Fix issue in CHANGELOG linting
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ CHANGELOG entry is missing authors.
+    CHANGELOG
+  end
+
+  def test_validate_leading_whitespace_for_header
+    assert_offense(<<~CHANGELOG)
+      * Fix leading whitespace in CHANGELOG
+      ^^^^ CHANGELOG header must start with '*' and 3 spaces
+
+          *Hartley McGuire*
+    CHANGELOG
+
+    assert_offense(<<~CHANGELOG)
+      *    Fix leading whitespace in CHANGELOG
+      ^^^^ CHANGELOG header must start with '*' and 3 spaces
+
+          *Hartley McGuire*
+    CHANGELOG
+  end
+
+  def test_validate_leading_whitespace_for_body
+    assert_offense(<<~CHANGELOG)
+      *   Fix leading whitespace in CHANGELOG
+
+        *Hartley McGuire*
+      ^^^^ CHANGELOG line must be indented 4 spaces
+    CHANGELOG
+  end
+
+  def test_validate_trailing_whitespace
+    assert_offense(<<~CHANGELOG)
+      *   Fix trailing whitespace in CHANGELOG 
+                                              ^ Trailing whitespace detected.
+
+          *Hartley McGuire*
+    CHANGELOG
+  end
+
   private
 
   def entries
@@ -50,5 +91,45 @@ class TestChangelog < Minitest::Test
 
   def offenses
     entries.flat_map(&:offenses)
+  end
+
+  ANNOTATION_PATTERN = /\s*\^+ /
+
+  def assert_offense(source)
+    lines = []
+    annotation = nil
+
+    source.each_line(chomp: true) do |line|
+      if ANNOTATION_PATTERN.match?(line)
+        annotation = [lines.length, line]
+      else
+        lines << line
+      end
+    end
+
+    entry = Changelog::Entry.new(lines, 1)
+
+    assert_equal 1,
+                 entry.offenses.length,
+                 "Entry has the wrong number of offenses"
+    offense = entry.offenses.first
+
+    assert_equal annotation[0],
+                 offense.line_number,
+                 "Offense has incorrect line number"
+    assert_equal lines[annotation[0] - 1],
+                 offense.line,
+                 "Offense has incorrect line"
+
+    annotation_message = annotation[1].gsub(ANNOTATION_PATTERN, "")
+    assert_equal annotation_message,
+                 offense.message,
+                 "Offense has incorrect message"
+
+    annotation_start = annotation[1].index("^") + 1
+    annotation_end = annotation[1].rindex("^") + 1
+    assert_equal annotation_start..annotation_end,
+                 offense.range,
+                 "Offense has incorrect range"
   end
 end
