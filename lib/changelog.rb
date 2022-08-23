@@ -60,7 +60,7 @@ class Changelog
 
       lines.each_with_index do |line, i|
         next if i == 0
-        next if line.empty?
+        next if line.strip.empty?
         next if line.start_with?(" " * 4)
 
         add_offense(

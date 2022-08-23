@@ -81,6 +81,13 @@ class TestChangelog < Minitest::Test
 
           *Hartley McGuire*
     CHANGELOG
+
+    assert_offense(<<~CHANGELOG)
+      *   Fix trailing whitespace in CHANGELOG
+       
+      ^ Trailing whitespace detected.
+          *Hartley McGuire*
+    CHANGELOG
   end
 
   private
