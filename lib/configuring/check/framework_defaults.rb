@@ -58,6 +58,8 @@ class Configuring
             "- [`#{full_config}`](##{full_config.tr("._", "-").downcase}): `#{value_with_fallback}`"
           end
 
+        checker.errors.concat(generated_doc.difference(configs))
+
         [header, "", *generated_doc.sort, ""]
       end
 
