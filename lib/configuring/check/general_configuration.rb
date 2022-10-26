@@ -38,7 +38,7 @@ class Configuring
       APP_CONFIG_CONST = "Rails::Application::Configuration"
 
       def app_config_tree
-        checker.parse(:app_config)
+        checker.parse(APPLICATION_CONFIGURATION_PATH)
       end
 
       def documented_general_config

@@ -14,27 +14,9 @@ class Configuring
     end
   end
 
-  class Resolver
-    APPLICATION_CONFIGURATION_PATH =
-      "railties/lib/rails/application/configuration.rb"
-    DOC_PATH = "guides/source/configuring.md"
-
-    def initialize(rails_path)
-      @rails_path = Pathname.new(rails_path)
-    end
-
-    def call(file)
-      relative_path =
-        case file
-        in :app_config
-          APPLICATION_CONFIGURATION_PATH
-        in :doc
-          DOC_PATH
-        end
-
-      @rails_path.join(relative_path)
-    end
-  end
+  DOC_PATH = "guides/source/configuring.md"
+  APPLICATION_CONFIGURATION_PATH =
+    "railties/lib/rails/application/configuration.rb"
 
   class Doc
     attr_accessor :general_config, :versioned_defaults
@@ -59,12 +41,12 @@ class Configuring
     end
   end
 
-  attr_reader :errors, :parser, :resolver
+  attr_reader :errors, :parser
 
   def initialize(rails_path)
     @errors = []
     @parser = CachedParser.new
-    @resolver = Resolver.new(rails_path)
+    @rails_path = Pathname.new(rails_path)
   end
 
   def check
@@ -76,12 +58,22 @@ class Configuring
   def doc
     @doc ||=
       begin
-        content = File.read(resolver.call(:doc))
+        content = File.read(doc_path)
         Configuring::Doc.new(content)
       end
   end
 
-  def parse(name)
-    parser.call(resolver.call(name))
+  def parse(relative_path)
+    parser.call(@rails_path.join(relative_path))
+  end
+
+  def write!
+    File.write(doc_path, doc.to_s)
+  end
+
+  private
+
+  def doc_path
+    @rails_path.join(DOC_PATH)
   end
 end

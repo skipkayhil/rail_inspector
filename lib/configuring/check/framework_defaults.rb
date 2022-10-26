@@ -24,7 +24,7 @@ class Configuring
       private
 
       def app_config_tree
-        checker.parse(:app_config)
+        checker.parse(APPLICATION_CONFIGURATION_PATH)
       end
 
       def check_defaults(defaults)

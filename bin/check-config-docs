@@ -24,4 +24,4 @@ checker.check
 
 exit checker.errors.empty? unless OPTIONS[:a]
 
-File.write(checker.resolver.call(:doc), checker.doc.to_s)
+checker.write!
