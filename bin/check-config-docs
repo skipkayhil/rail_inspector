@@ -22,6 +22,7 @@ OptionParser
 checker = Configuring.new(ARGV.first)
 checker.check
 
+puts checker.errors unless checker.errors.empty?
 exit checker.errors.empty? unless OPTIONS[:a]
 
 checker.write!

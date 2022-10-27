@@ -17,6 +17,8 @@ class Configuring
   DOC_PATH = "guides/source/configuring.md"
   APPLICATION_CONFIGURATION_PATH =
     "railties/lib/rails/application/configuration.rb"
+  NEW_FRAMEWORK_DEFAULTS_PATH =
+    "railties/lib/rails/generators/rails/app/templates/config/initializers/new_framework_defaults_%{version}.rb.tt"
 
   class Doc
     attr_accessor :general_config, :versioned_defaults
@@ -65,6 +67,14 @@ class Configuring
 
   def parse(relative_path)
     parser.call(@rails_path.join(relative_path))
+  end
+
+  def read(relative_path)
+    File.read(@rails_path.join(relative_path))
+  end
+
+  def rails_version
+    @rails_version ||= File.read(@rails_path.join("RAILS_VERSION")).to_f.to_s
   end
 
   def write!

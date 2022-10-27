@@ -7,12 +7,43 @@ class Configuring
     class FrameworkDefaults
       attr_reader :checker
 
+      class NewFrameworkDefaultsFile
+        attr_reader :checker, :visitor
+
+        def initialize(checker, visitor)
+          @checker = checker
+          @visitor = visitor
+        end
+
+        def check
+          visitor.config_map[checker.rails_version].each_key do |config|
+            app_config = config.gsub(/^self/, "config")
+
+            next if defaults_file_content.include? app_config
+
+            checker.errors << config
+          end
+        end
+
+        private
+
+        def defaults_file_content
+          @defaults_file_content ||=
+            checker.read(
+              NEW_FRAMEWORK_DEFAULTS_PATH %
+                { version: checker.rails_version.gsub(".", "_") }
+            )
+        end
+      end
+
       def initialize(checker)
         @checker = checker
       end
 
       def check
         header, *defaults_by_version = documented_defaults
+
+        NewFrameworkDefaultsFile.new(checker, visitor).check
 
         checker.doc.versioned_defaults =
           header +
