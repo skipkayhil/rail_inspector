@@ -37,7 +37,7 @@ module Visitor
 
       @current_framework =
         case node
-        in predicate: SyntaxTree::FCall[value: { value: "respond_to?" }]
+        in predicate: SyntaxTree::CallNode[message: { value: "respond_to?" }]
           node.predicate.arguments.arguments.parts[0].value.value
         else
           nil
@@ -67,7 +67,7 @@ module Visitor
     private
 
     def target_version_case?(node)
-      node in SyntaxTree::Call[
+      node in SyntaxTree::CallNode[
         receiver: SyntaxTree::VarRef[
           value: SyntaxTree::Ident[value: "target_version"]
         ]
@@ -77,7 +77,8 @@ module Visitor
     def assert_framework(node)
       framework =
         case node.target.parent
-        in { value: SyntaxTree::Const } | { value: SyntaxTree::Kw[value: "self"] }
+        in { value: SyntaxTree::Const } |
+             { value: SyntaxTree::Kw[value: "self"] }
           nil
         in receiver: { value: { value: framework } }
           framework
