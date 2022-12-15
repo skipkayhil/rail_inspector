@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
+require "tempfile"
 require_relative "../../visitor/framework_default"
 
 class Configuring
   module Check
     class FrameworkDefaults
-      attr_reader :checker
-
       class NewFrameworkDefaultsFile
         attr_reader :checker, :visitor
 
@@ -21,20 +20,31 @@ class Configuring
 
             next if defaults_file_content.include? app_config
 
-            checker.errors << config
+            add_error(config)
           end
         end
 
         private
 
+        def add_error(config)
+          checker.errors << <<~MESSAGE
+            #{new_framework_defaults_path}
+            Missing: #{config}
+
+          MESSAGE
+        end
+
         def defaults_file_content
-          @defaults_file_content ||=
-            checker.read(
-              NEW_FRAMEWORK_DEFAULTS_PATH %
-                { version: checker.rails_version.gsub(".", "_") }
-            )
+          @defaults_file_content ||= checker.read(new_framework_defaults_path)
+        end
+
+        def new_framework_defaults_path
+          NEW_FRAMEWORK_DEFAULTS_PATH %
+            { version: checker.rails_version.gsub(".", "_") }
         end
       end
+
+      attr_reader :checker
 
       def initialize(checker)
         @checker = checker
@@ -64,34 +74,56 @@ class Configuring
         version = header.match(/\d\.\d/)[0]
 
         generated_doc =
-          visitor.config_map[version].map do |config, value|
-            full_config =
-              case config
-              when /^[A-Z]/
-                config
-              when /^self/
-                config.sub("self", "config")
-              else
-                "config.#{config}"
-              end
+          visitor.config_map[version]
+            .map do |config, value|
+              full_config =
+                case config
+                when /^[A-Z]/
+                  config
+                when /^self/
+                  config.sub("self", "config")
+                else
+                  "config.#{config}"
+                end
 
-            # TODO: bad fallback until I have a better solution for stringifiying
-            # HashLiteral ast and multiline string ast
-            value_with_fallback =
-              if value.nil?
-                configs.find { |c| c.include?(full_config) }.match(/ `(.*)`$/)[
-                  1
-                ]
-              else
-                value
-              end
+              # TODO: bad fallback until I have a better solution for stringifiying
+              # HashLiteral ast and multiline string ast
+              value_with_fallback =
+                if value.nil?
+                  configs
+                    .find { |c| c.include?(full_config) }
+                    .match(/ `(.*)`$/)[
+                    1
+                  ]
+                else
+                  value
+                end
 
-            "- [`#{full_config}`](##{full_config.tr("._", "-").downcase}): `#{value_with_fallback}`"
+              "- [`#{full_config}`](##{full_config.tr("._", "-").downcase}): `#{value_with_fallback}`"
+            end
+            .sort
+
+        config_diff =
+          Tempfile.create("expected") do |doc|
+            doc << generated_doc.join("\n")
+            doc.flush
+
+            Tempfile.create("actual") do |code|
+              code << configs.join("\n")
+              code.flush
+
+              `git diff --color --no-index #{doc.path} #{code.path}`
+            end
           end
 
-        checker.errors.concat(generated_doc.difference(configs))
+        checker.errors << <<~MESSAGE unless config_diff.empty?
+            #{APPLICATION_CONFIGURATION_PATH}: Incorrect load_defaults docs
+            --- Expected
+            +++ Actual
+            #{config_diff.split("\n")[5..].join("\n")}
+          MESSAGE
 
-        [header, "", *generated_doc.sort, ""]
+        [header, "", *generated_doc, ""]
       end
 
       def documented_defaults
