@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+
+require "pathname"
+require "tmpdir"
+
+RAILS_PATH = Pathname.new(ARGV.first)
+
+folders = Dir["#{RAILS_PATH}/*"].filter do |path|
+  Dir.exist?("#{path}/test/dummy")
+end
+
+Dir.mktmpdir do |dir|
+  Dir.chdir(dir) do
+    `#{RAILS_PATH}/railties/exe/rails plugin new --mountable rails_bin`
+  end
+  folders.each do |folder|
+    FileUtils.cp_r "#{dir}/rails_bin/test/dummy", "#{folder}/test"
+  end
+end
