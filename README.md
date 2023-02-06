@@ -12,7 +12,7 @@ Lints CHANGELOG files for common issues:
 - trailing whitespace
 - incorrect leading whitespace
 
-Its currently running on [Rails PRs][] and daily in this repo
+It's currently running on [Rails PRs][] and daily in this repo
 
 [Rails PRs]: https://github.com/rails/rails/commit/a4770968ef5c2e7bcccb4706f3c809d2a8912638
 
@@ -21,4 +21,12 @@ Its currently running on [Rails PRs][] and daily in this repo
 Ensures that `config.*` values defined in `Rails::Application::Configuration`
 are documented in `configuring.md`
 
-Its currently running daily in this repo
+It's currently running daily in this repo
+
+### `check-links`
+
+Ensures that API docs and guides do not link to edge{guides,api}
+
+### `regen-dummy`
+
+Updates Rails' framework dummy apps by regenerating templated files
