@@ -28,11 +28,6 @@ module EdgeLinter
     https://edgeapi.rubyonrails.org
     https://edgeapi.rubyonrails.org/classes/ActionDispatch/Response.html
     https://edgeguides.rubyonrails.org/)
-    https://edgeguides.rubyonrails.org/action_cable_overview.html)
-    https://edgeguides.rubyonrails.org/action_mailbox_basics.html)
-    https://edgeguides.rubyonrails.org/action_text_overview.html)
-    https://edgeguides.rubyonrails.org/active_job_basics.html)
-    https://edgeguides.rubyonrails.org/active_storage_overview.html)
     https://edgeguides.rubyonrails.org/contributing_to_ruby_on_rails.html#contributing-to-the-rails-documentation)
     https://edgeguides.rubyonrails.org/contributing_to_ruby_on_rails.html#contributing-to-the-rails-documentation).
     https://edgeguides.rubyonrails.org/contributing_to_ruby_on_rails.html#create-an-executable-test-case)
