@@ -3,6 +3,7 @@
 require "syntax_tree"
 
 require_relative "./hash_to_string"
+require_relative "./multiline_to_string"
 
 module Visitor
   class FrameworkDefault < SyntaxTree::Visitor
@@ -61,7 +62,7 @@ module Visitor
         when SyntaxTree::HashLiteral
           HashToString.new.tap { |v| v.visit(node.value) }.to_s
         when SyntaxTree::StringConcat
-          nil
+          MultilineToString.new.tap { |v| v.visit(node.value) }.to_s
         else
           SyntaxTree::Formatter.format(nil, node.value)
         end

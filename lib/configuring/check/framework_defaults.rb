@@ -86,20 +86,7 @@ class Configuring
                   "config.#{config}"
                 end
 
-              # TODO: bad fallback until I have a better solution for stringifiying
-              # HashLiteral ast and multiline string ast
-              value_with_fallback =
-                if value.nil?
-                  configs
-                    .find { |c| c.include?(full_config) }
-                    .match(/ `(.*)`$/)[
-                    1
-                  ]
-                else
-                  value
-                end
-
-              "- [`#{full_config}`](##{full_config.tr("._", "-").downcase}): `#{value_with_fallback}`"
+              "- [`#{full_config}`](##{full_config.tr("._", "-").downcase}): `#{value}`"
             end
             .sort
 
