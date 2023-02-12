@@ -2,6 +2,8 @@
 
 require "syntax_tree"
 
+require_relative "./hash_to_string"
+
 module Visitor
   class FrameworkDefault < SyntaxTree::Visitor
     attr_reader :config_map
@@ -56,7 +58,9 @@ module Visitor
       target = SyntaxTree::Formatter.format(nil, node.target)
       value =
         case node.value
-        when SyntaxTree::StringConcat, SyntaxTree::HashLiteral
+        when SyntaxTree::HashLiteral
+          HashToString.new.tap { |v| v.visit(node.value) }.to_s
+        when SyntaxTree::StringConcat
           nil
         else
           SyntaxTree::Formatter.format(nil, node.value)
