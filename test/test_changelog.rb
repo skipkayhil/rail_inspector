@@ -42,6 +42,12 @@ class TestChangelog < Minitest::Test
     assert_equal 1, offenses.length
   end
 
+  def test_header_ending_with_star_not_treated_as_author
+    @changelog = changelog_fixture("action_pack_69d504.md")
+
+    assert_equal 0, offenses.length
+  end
+
   def test_validate_authors
     assert_offense(<<~CHANGELOG)
       *   Fix issue in CHANGELOG linting

@@ -146,7 +146,13 @@ class Changelog
     def peek_probably_header?
       return false unless @buffer.peek(1) == "*"
 
-      !@buffer.check_until(/\n/).strip.end_with?("*")
+      maybe_header = @buffer.check_until(/\n/).strip
+
+      # If there are an odd number of *, then the line is almost certainly a
+      # header since bolding requires pairs.
+      return true unless maybe_header.count("*").even?
+
+      !maybe_header.end_with?("*")
     end
 
     def peek_footer?
