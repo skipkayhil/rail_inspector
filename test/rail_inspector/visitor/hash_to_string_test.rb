@@ -2,7 +2,7 @@
 
 require "syntax_tree"
 
-require "visitor/hash_to_string"
+require "rail_inspector/visitor/hash_to_string"
 
 module Visitor
   class HashToStringTest < Minitest::Test
