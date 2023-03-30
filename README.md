@@ -1,32 +1,40 @@
-# rails-bin
+# RailInspector
 
-A collection of scripts for working with Rails
+A collection of linters for [`rails/rails`](https://github.com/rails/rails)
 
-## `bin/`
+## Installation
 
-### `check-changelogs`
+Install the gem and add to the application's Gemfile by executing:
 
-Lints CHANGELOG files for common issues:
+    $ bundle add rail_inspector
 
-- missing authors
-- trailing whitespace
-- incorrect leading whitespace
+If bundler is not being used to manage dependencies, install the gem by
+executing:
 
-It's currently running on [Rails PRs][] and daily in this repo
+    $ gem install rail_inspector
 
-[Rails PRs]: https://github.com/rails/rails/commit/a4770968ef5c2e7bcccb4706f3c809d2a8912638
+## Usage
 
-### `check-config-docs`
+TODO: Write usage instructions here
 
-Ensures that `config.*` values defined in `Rails::Application::Configuration`
-are documented in `configuring.md`
+## Development
 
-It's currently running daily in this repo
+After checking out the repo, run `bin/setup` to install dependencies. Then, run
+`rake test` to run the tests. You can also run `bin/console` for an interactive
+prompt that will allow you to experiment.
 
-### `check-links`
+To install this gem onto your local machine, run `bundle exec rake install`. To
+release a new version, update the version number in `version.rb`, and then run
+`bundle exec rake release`, which will create a git tag for the version, push
+git commits and the created tag, and push the `.gem` file to
+[rubygems.org](https://rubygems.org).
 
-Ensures that API docs and guides do not link to edge{guides,api}
+## Contributing
 
-### `regen-dummy`
+Bug reports and pull requests are welcome on GitHub at
+https://github.com/skipkayhil/rail_inspector.
 
-Updates Rails' framework dummy apps by regenerating templated files
+## License
+
+The gem is available as open source under the terms of the [MIT
+License](https://opensource.org/licenses/MIT).

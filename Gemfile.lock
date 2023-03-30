@@ -1,3 +1,9 @@
+PATH
+  remote: .
+  specs:
+    rail_inspector (0.0.1)
+      syntax_tree (= 6.1.1)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -11,9 +17,9 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  minitest
-  rake
-  syntax_tree
+  minitest (~> 5.0)
+  rail_inspector!
+  rake (~> 13.0)
 
 BUNDLED WITH
    2.3.19
