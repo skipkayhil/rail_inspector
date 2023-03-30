@@ -10,7 +10,9 @@ module RailInspector
 
     desc "changelogs RAILS_PATH", "Lint CHANGELOG files for common issues"
     def changelogs(rails_path)
-      puts "checking #{rails_path}"
+      require_relative "./changelog"
+
+      exit Changelog::Runner.new(rails_path).call
     end
   end
 end

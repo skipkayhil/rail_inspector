@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "changelog"
 require "pathname"
+require "rail_inspector/changelog"
 
 module ChangelogFixtures
   def changelog_fixture(name)

@@ -22,7 +22,7 @@ jobs:
         repository: rails/rails
         path: rails
     - run: bin/check-config-docs ./rails
-  daily-check-changelogs:
+  daily-changelogs:
     name: Check CHANGELOGS (rails main)
     runs-on: ubuntu-20.04
     steps:
@@ -35,4 +35,4 @@ jobs:
       with:
         repository: rails/rails
         path: rails
-    - run: bin/check-changelogs ./rails
+    - run: bundle exec railspect changelogs ./rails

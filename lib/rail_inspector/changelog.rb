@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "pathname"
 require "strscan"
 
 class Changelog
@@ -196,6 +197,43 @@ class Changelog
       puts "#{file.path}:#{offense.line_number} #{offense.message}"
       puts offense.line
       puts ("^" * offense.range.count).rjust(offense.range.end)
+    end
+  end
+
+  class Runner
+    attr_reader :formatter, :rails_path
+
+    def initialize(rails_path)
+      @formatter = Formatter.new
+      @rails_path = Pathname.new(rails_path)
+    end
+
+    def call
+      invalid_changelogs =
+        changelogs.reject do |changelog|
+          output = changelog.valid? ? "." : "E"
+          $stdout.write(output)
+
+          changelog.valid?
+        end
+
+      puts "\n\n"
+      puts "Offenses:\n\n" unless invalid_changelogs.empty?
+
+      changelogs.each(&formatter)
+      formatter.finish
+
+      invalid_changelogs.empty?
+    end
+
+    private
+
+    def changelogs
+      changelog_paths.map { |path| Changelog.new(path, File.read(path)) }
+    end
+
+    def changelog_paths
+      Dir[rails_path.join("*/CHANGELOG.md")]
     end
   end
 

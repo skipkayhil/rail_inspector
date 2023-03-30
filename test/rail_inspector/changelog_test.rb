@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "changelog"
+require "rail_inspector/changelog"
 require "test/test_helpers/changelog_fixtures"
 
 class TestChangelog < Minitest::Test
