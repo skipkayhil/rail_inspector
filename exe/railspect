@@ -1,3 +1,5 @@
 #!/usr/bin/env ruby
 
-require "rail_inspector"
+require_relative "../lib/rail_inspector/cli"
+
+RailInspector::Cli.start

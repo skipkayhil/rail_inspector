@@ -3,6 +3,7 @@ PATH
   specs:
     rail_inspector (0.0.1)
       syntax_tree (= 6.1.1)
+      thor (~> 1.0)
 
 GEM
   remote: https://rubygems.org/
@@ -12,6 +13,7 @@ GEM
     rake (13.0.6)
     syntax_tree (6.1.1)
       prettier_print (>= 1.2.0)
+    thor (1.2.1)
 
 PLATFORMS
   x86_64-linux
