@@ -15,7 +15,13 @@ executing:
 
 ## Usage
 
-TODO: Write usage instructions here
+```console
+$ railspect
+Commands:
+  railspect changelogs RAILS_PATH     # Check CHANGELOG files for common issues
+  railspect configuration RAILS_PATH  # Check various Configuration issues
+  railspect help [COMMAND]            # Describe available commands or one specific command
+```
 
 ## Development
 
