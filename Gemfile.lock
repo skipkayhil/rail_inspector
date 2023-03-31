@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rail_inspector (0.0.1)
+    rail_inspector (0.0.2)
       syntax_tree (= 6.1.1)
       thor (~> 1.0)
 
