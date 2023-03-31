@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "pathname"
 require_relative "./configuring/check/general_configuration"
 require_relative "./configuring/check/framework_defaults"
 
