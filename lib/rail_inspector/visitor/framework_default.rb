@@ -48,7 +48,7 @@ module Visitor
 
       def initialize
         @configs = {}
-        @current_framework = nil
+        @framework_stack = []
       end
 
       def config_for(node)
@@ -58,19 +58,17 @@ module Visitor
 
       visit_methods do
         def visit_if(node)
-          @current_framework =
-            case node
-            in predicate: SyntaxTree::CallNode[
-                 message: { value: "respond_to?" }
-               ]
-              node.predicate.arguments.arguments.parts[0].value.value
-            else
-              nil
-            end
+          unless new_framework = respond_to_framework?(node.predicate)
+            return super
+          end
 
-          visit_child_nodes(node)
+          if ENV["STRICT"] && current_framework
+            raise "Potentially nested framework? Current: '#{current_framework}', found: '#{new_framework}'"
+          end
 
-          @current_framework = nil
+          @framework_stack << new_framework
+          super
+          @framework_stack.pop
         end
 
         def visit_assign(node)
@@ -104,9 +102,30 @@ module Visitor
             framework
           end
 
-        return if @current_framework == framework
+        return if current_framework == framework
 
-        raise "Expected #{@current_framework} to match #{framework}"
+        raise "Expected #{current_framework} to match #{framework}"
+      end
+
+      def current_framework
+        @framework_stack.last
+      end
+
+      def respond_to_framework?(node)
+        if node in SyntaxTree::CallNode[
+             message: SyntaxTree::Ident[value: "respond_to?"],
+             arguments: SyntaxTree::ArgParen[
+               arguments: SyntaxTree::Args[
+                 parts: [
+                   SyntaxTree::SymbolLiteral[
+                     value: SyntaxTree::Ident[value: new_framework]
+                   ]
+                 ]
+               ]
+             ]
+           ]
+          new_framework
+        end
       end
     end
   end

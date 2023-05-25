@@ -48,6 +48,40 @@ module Visitor
       assert_equal config["7.1"]["self.log_file_size"], "100 * 1024 * 1024"
     end
 
+    def test_condition_inside_framework
+      config = config_for_defaults <<~RUBY
+        case target_version.to_s
+        when "7.1"
+          if respond_to?(:action_view)
+            if Rails::HTML::Sanitizer.html5_support?
+              action_view.sanitizer_vendor = Rails::HTML5::Sanitizer
+            end
+          end
+        end
+      RUBY
+
+      assert_includes config, "7.1"
+      assert_equal config["7.1"]["action_view.sanitizer_vendor"], "Rails::HTML5::Sanitizer"
+    end
+
+    def test_nested_frameworks_raise_when_strict
+      original_env, ENV["STRICT"] = ENV["STRICT"], "true"
+
+      assert_raises do
+        config_for_defaults <<~RUBY
+          case target_version.to_s
+          when "7.1"
+            if respond_to?(:action_view)
+              if respond_to?(:active_record)
+              end
+            end
+          end
+        RUBY
+      end
+    ensure
+      ENV["STRICT"] = original_env
+    end
+
     private
 
     def wrapped_defaults(defaults)
