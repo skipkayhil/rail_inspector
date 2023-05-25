@@ -21,6 +21,8 @@ module Visitor
           if respond_to?(:assets)
             assets.unknown_asset_fallback = false
           end
+        else
+          raise
         end
       RUBY
 

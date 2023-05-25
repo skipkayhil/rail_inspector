@@ -30,27 +30,32 @@ module Visitor
       case_node, *others = TargetVersionCaseFinder.scan(node).to_a
       raise "#{others.length} other cases?" unless others.empty?
 
-      internal_visitor = FrameworkDefaultInternal.new
-      internal_visitor.visit(case_node)
-      @config_map = internal_visitor.config_map
+      visit_when(case_node.consequent)
+    end
+
+    private
+
+    def visit_when(node)
+      version = node.arguments.parts[0].parts[0].value
+
+      config_map[version] = FrameworkDefaultInternal.new.config_for(
+        node.statements
+      )
+
+      visit_when(node.consequent) if node.consequent.is_a? SyntaxTree::When
     end
 
     class FrameworkDefaultInternal < SyntaxTree::Visitor
-      attr_reader :config_map
+      attr_reader :configs
 
       def initialize
-        @config_map = {}
-        @current_version = nil
+        @configs = {}
         @current_framework = nil
       end
 
-      visit_method def visit_when(node)
-        @current_version = node.arguments.parts[0].parts[0].value
-
-        @config_map[@current_version] = {}
-        visit_child_nodes(node)
-
-        @current_version = nil
+      def config_for(node)
+        visit(node)
+        @configs
       end
 
       visit_method def visit_if(node)
@@ -80,7 +85,7 @@ module Visitor
           else
             SyntaxTree::Formatter.format(nil, node.value)
           end
-        @config_map[@current_version][target] = value
+        @configs[target] = value
       end
 
       private
