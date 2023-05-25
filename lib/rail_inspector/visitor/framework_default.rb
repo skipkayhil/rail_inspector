@@ -38,14 +38,12 @@ module Visitor
     def visit_when(node)
       version = node.arguments.parts[0].parts[0].value
 
-      config_map[version] = FrameworkDefaultInternal.new.config_for(
-        node.statements
-      )
+      config_map[version] = VersionedConfig.new.config_for(node.statements)
 
       visit_when(node.consequent) if node.consequent.is_a? SyntaxTree::When
     end
 
-    class FrameworkDefaultInternal < SyntaxTree::Visitor
+    class VersionedConfig < SyntaxTree::Visitor
       attr_reader :configs
 
       def initialize
@@ -58,34 +56,38 @@ module Visitor
         @configs
       end
 
-      visit_method def visit_if(node)
-        @current_framework =
-          case node
-          in predicate: SyntaxTree::CallNode[message: { value: "respond_to?" }]
-            node.predicate.arguments.arguments.parts[0].value.value
-          else
-            nil
-          end
+      visit_methods do
+        def visit_if(node)
+          @current_framework =
+            case node
+            in predicate: SyntaxTree::CallNode[
+                 message: { value: "respond_to?" }
+               ]
+              node.predicate.arguments.arguments.parts[0].value.value
+            else
+              nil
+            end
 
-        visit_child_nodes(node)
+          visit_child_nodes(node)
 
-        @current_framework = nil
-      end
+          @current_framework = nil
+        end
 
-      visit_method def visit_assign(node)
-        assert_framework(node)
+        def visit_assign(node)
+          assert_framework(node)
 
-        target = SyntaxTree::Formatter.format(nil, node.target)
-        value =
-          case node.value
-          when SyntaxTree::HashLiteral
-            HashToString.new.tap { |v| v.visit(node.value) }.to_s
-          when SyntaxTree::StringConcat
-            MultilineToString.new.tap { |v| v.visit(node.value) }.to_s
-          else
-            SyntaxTree::Formatter.format(nil, node.value)
-          end
-        @configs[target] = value
+          target = SyntaxTree::Formatter.format(nil, node.target)
+          value =
+            case node.value
+            when SyntaxTree::HashLiteral
+              HashToString.new.tap { |v| v.visit(node.value) }.to_s
+            when SyntaxTree::StringConcat
+              MultilineToString.new.tap { |v| v.visit(node.value) }.to_s
+            else
+              SyntaxTree::Formatter.format(nil, node.value)
+            end
+          @configs[target] = value
+        end
       end
 
       private
