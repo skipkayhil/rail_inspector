@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "visitor/framework_default"
+require "rail_inspector/visitor/framework_default"
 
 module Visitor
   class FrameworkDefaultTest < Minitest::Test
