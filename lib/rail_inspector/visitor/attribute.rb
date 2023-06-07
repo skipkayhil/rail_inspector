@@ -3,7 +3,7 @@
 require "set"
 require "syntax_tree"
 
-module RailInspect
+module RailInspector
   module Visitor
     class Attribute < SyntaxTree::Visitor
       attr_reader :attribute_map
