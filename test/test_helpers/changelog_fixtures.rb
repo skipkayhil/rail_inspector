@@ -9,6 +9,6 @@ module ChangelogFixtures
 
     raise ArgumentError, "#{name} fixture not found" unless path.exist?
 
-    Changelog.new(path, path.read)
+    RailInspector::Changelog.new(path, path.read)
   end
 end

@@ -119,7 +119,7 @@ class TestChangelog < Minitest::Test
         end
       end
 
-      entry = Changelog::Entry.new(lines, 1)
+      entry = RailInspector::Changelog::Entry.new(lines, 1)
 
       assert_equal 1,
                    entry.offenses.length,
