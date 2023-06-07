@@ -26,12 +26,11 @@ module Visitor
     end
 
     private
-
-    def string_for(hash_as_string)
-      ast = SyntaxTree.parse(hash_as_string)
-      visitor = HashToString.new
-      visitor.visit(ast)
-      visitor.to_s
-    end
+      def string_for(hash_as_string)
+        ast = SyntaxTree.parse(hash_as_string)
+        visitor = HashToString.new
+        visitor.visit(ast)
+        visitor.to_s
+      end
   end
 end

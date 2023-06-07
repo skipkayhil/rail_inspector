@@ -34,33 +34,32 @@ class Configuring
       end
 
       private
+        APP_CONFIG_CONST = "Rails::Application::Configuration"
 
-      APP_CONFIG_CONST = "Rails::Application::Configuration"
+        def app_config_tree
+          checker.parse(APPLICATION_CONFIGURATION_PATH)
+        end
 
-      def app_config_tree
-        checker.parse(APPLICATION_CONFIGURATION_PATH)
-      end
+        def documented_general_config
+          checker
+            .doc
+            .general_config
+            .slice_before { |line| line.start_with?("####") }
+            .to_a
+        end
 
-      def documented_general_config
-        checker
-          .doc
-          .general_config
-          .slice_before { |line| line.start_with?("####") }
-          .to_a
-      end
+        def general_accessors
+          visitor.attribute_map[APP_CONFIG_CONST]["attr_accessor"]
+        end
 
-      def general_accessors
-        visitor.attribute_map[APP_CONFIG_CONST]["attr_accessor"]
-      end
-
-      def visitor
-        @visitor ||=
-          begin
-            visitor = Visitor::Attribute.new
-            visitor.visit(app_config_tree)
-            visitor
-          end
-      end
+        def visitor
+          @visitor ||=
+            begin
+              visitor = Visitor::Attribute.new
+              visitor.visit(app_config_tree)
+              visitor
+            end
+        end
     end
   end
 end

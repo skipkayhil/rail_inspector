@@ -83,26 +83,25 @@ module Visitor
     end
 
     private
-
-    def wrapped_defaults(defaults)
-      <<~RUBY
+      def wrapped_defaults(defaults)
+        <<~RUBY
         class Configuration
           def load_defaults(target_version)
             #{defaults}
           end
         end
-      RUBY
-    end
+        RUBY
+      end
 
-    def config_for_defaults(defaults)
-      full_class = wrapped_defaults(defaults)
-      parsed = SyntaxTree.parse(full_class)
-      visitor.visit(parsed)
-      visitor.config_map
-    end
+      def config_for_defaults(defaults)
+        full_class = wrapped_defaults(defaults)
+        parsed = SyntaxTree.parse(full_class)
+        visitor.visit(parsed)
+        visitor.config_map
+      end
 
-    def visitor
-      @visitor ||= Visitor::FrameworkDefault.new
-    end
+      def visitor
+        @visitor ||= Visitor::FrameworkDefault.new
+      end
   end
 end

@@ -37,7 +37,6 @@ module Visitor
     end
 
     private
-
-    ATTRIBUTE_METHODS = %w[attr_accessor attr_reader attr_writer]
+      ATTRIBUTE_METHODS = %w[attr_accessor attr_reader attr_writer]
   end
 end

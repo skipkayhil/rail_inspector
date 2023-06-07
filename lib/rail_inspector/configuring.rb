@@ -83,8 +83,7 @@ class Configuring
   end
 
   private
-
-  def doc_path
-    @rails_path.join(DOC_PATH)
-  end
+    def doc_path
+      @rails_path.join(DOC_PATH)
+    end
 end

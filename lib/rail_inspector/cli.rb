@@ -5,7 +5,9 @@ require "thor"
 module RailInspector
   class Cli < Thor
     class << self
-      def exit_on_failure? = true
+      def exit_on_failure?
+        true
+      end
     end
 
     desc "changelogs RAILS_PATH", "Check CHANGELOG files for common issues"
